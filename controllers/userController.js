@@ -20,10 +20,10 @@ const transporter = nodemailer.createTransport({
 // Crear un nuevo usuario
 exports.createUser = async (req, res) => {
     try {
-        const { dpi, nit, telefono, direccion, correo, nombres, apellidos, rol, pais, region, passuser, genero, edad, pesoKg, estaturacm, etnia } = req.body;
+        const { correo, nombres, apellidos, rol, pais, region, passuser, genero, edad, pesoKg, estaturacm, etnia } = req.body;
 
         // Validar que los campos necesarios estén presentes
-        if (!dpi || !correo || !nombres || !apellidos || !passuser || !edad || !pesoKg || !estaturacm) {
+        if (!correo || !nombres || !apellidos || !passuser || !edad || !pesoKg || !estaturacm) {
             return res.status(400).json({ message: 'Faltan datos requeridos' });
         }
 
@@ -32,10 +32,6 @@ exports.createUser = async (req, res) => {
 
         // Crear el usuario en la base de datos con la contraseña encriptada
         const user = await User.create({
-            dpi,
-            nit,
-            telefono,
-            direccion,
             correo,
             nombres,
             apellidos,
@@ -54,6 +50,16 @@ exports.createUser = async (req, res) => {
         const userData = { ...user.toJSON() };
         delete userData.passuser;  // Eliminamos la contraseña antes de enviarla al cliente
 
+                // Enviar un correo al usuario con sus datos
+        const mailOptions = {
+            from: 'joshinzengumi007@gmail.com', // Dirección del remitente
+            to: correo, // Dirección del destinatario (el correo proporcionado)
+            subject: 'Bienvenido a la plataforma Fishbone',
+            text: `Hola ${nombres} ${apellidos},\n\n¡Tu cuenta ha sido creada exitosamente! Aquí están tus datos de acceso:\n\nUsuario: ${correo}\nContraseña: ${passuser}\n\nPor favor, mantén esta información segura.\n\nSaludos,\nEl equipo Fishbone.`
+        };
+
+        await transporter.sendMail(mailOptions);
+
         res.status(201).json(userData);  // Retornamos el usuario sin la contraseña
     } catch (error) {
         res.status(500).json({ message: 'Error al crear el usuario', error: error.message });
@@ -64,7 +70,7 @@ exports.createUser = async (req, res) => {
 exports.updateUser = async (req, res) => {
     try {
         const { id_usuario } = req.params;
-        const { dpi, nit, telefono, direccion, correo, nombres, apellidos, rol, pais, region, passuser, genero, edad, pesoKg, estaturacm, etnia } = req.body;
+        const { correo, nombres, apellidos, rol, pais, region, passuser, genero, edad, pesoKg, estaturacm, etnia } = req.body;
 
         const user = await User.findByPk(id_usuario);
 
@@ -80,10 +86,6 @@ exports.updateUser = async (req, res) => {
 
         // Actualizar los campos del usuario
         await user.update({
-            dpi,
-            nit,
-            telefono,
-            direccion,
             correo,
             nombres,
             apellidos,
@@ -300,10 +302,10 @@ exports.forgotPassword = async (req, res) => {
 
         // Generar un token para la recuperación de la contraseña
         const resetToken = jwt.sign({ id_usuario: user.id_usuario }, process.env.JWT_SECRET, { expiresIn: '1h' });
-
+ 
         // Crear un enlace de restablecimiento
         const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
-
+        
         // Enviar un correo electrónico con el enlace de restablecimiento
         const mailOptions = {
             from: process.env.EMAIL_USER,  // Remitente

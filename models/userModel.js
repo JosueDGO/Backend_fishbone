@@ -12,7 +12,7 @@ const User = sequelize.define('User', {
     },
     dpi: {
         type: DataTypes.STRING(50),
-        allowNull: false
+        allowNull: true
     },
     nit: {
         type: DataTypes.STRING(50),
